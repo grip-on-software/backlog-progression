@@ -1,7 +1,8 @@
 import React from 'react';
-import { Alert, Col, Container, Row } from 'react-bootstrap';
+import { Alert, Card, Col, Container, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 
+import ProjectTypeahead from './ProjectTypeahead';
 import { alertsSelector, deleteAlert } from '../slices/alerts';
 
 const App = () => {
@@ -29,6 +30,15 @@ const App = () => {
               </Alert>
             )
           }
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Card className="mb-4">
+            <Card.Body>
+              <ProjectTypeahead />
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
     </Container>

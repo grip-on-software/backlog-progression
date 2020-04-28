@@ -7,6 +7,8 @@ import App from './components/App';
 import rootReducer from './slices'
 
 import './index.scss';
+import 'react-bootstrap-typeahead/css/Typeahead.scss';
+import 'react-bootstrap-typeahead/css/Typeahead-bs4.scss';
 
 const store = configureStore({ reducer: rootReducer });
 
