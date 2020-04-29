@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Card, Col, Container, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 
+import DatePlayer from './DatePlayer';
 import ProjectTypeahead from './ProjectTypeahead';
 import { alertsSelector, deleteAlert } from '../slices/alerts';
 
@@ -37,6 +38,7 @@ const App = () => {
           <Card className="mb-4">
             <Card.Body>
               <ProjectTypeahead />
+              <DatePlayer />
             </Card.Body>
           </Card>
         </Col>
