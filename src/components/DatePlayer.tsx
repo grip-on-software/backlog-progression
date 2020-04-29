@@ -25,7 +25,7 @@ const DatePlayer = (props: Props) => {
         </ButtonToolbar>
       </Col>
       <Col>
-        <Form.Control type="range" custom />
+        <Form.Control type="range" defaultValue="0" custom />
       </Col>
     </Row>
   );
