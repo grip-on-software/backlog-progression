@@ -6,6 +6,8 @@ import { faBackward, faForward, faPlay, faPause, faStop } from '@fortawesome/fre
 
 import { addAlert } from '../slices/alerts';
 import { Release, configSelector, setDate } from '../slices/config';
+import { decreaseSpeed, increaseSpeed, pause, play, playerSelector, playSpeeds, stop } from '../slices/player';
+
 
 interface Sprint {
   id: number,
@@ -24,69 +26,45 @@ interface Props {
   className?: string,
 };
 
-const speeds = [
-  {
-    interval: 43200000,
-    label: "12 hours",
-  },
-  {
-    interval: 86400000,
-    label: "1 day",
-  },
-  {
-    interval: 172800000,
-    label: "2 days",
-  },
-  {
-    interval: 345600000,
-    label: "4 days",
-  },
-  {
-    interval: 604800000,
-    label: "1 week",
-  },
-  {
-    interval: 1209600000,
-    label: "2 weeks",
-  }
-];
-
 let timeout: NodeJS.Timeout;
 
 const DatePlayer = (props: Props) => {
   const dispatch = useDispatch();
   const { date, project } = useSelector(configSelector);
+  const { isPlaying, speed } = useSelector(playerSelector);
 
   const [changelog, setChangelog] = useState<Change[]>([])
-  const [play, setPlay] = useState<boolean>(false);
-  const [speed, setSpeed] = useState<number>(1);
   const range = {
     min: changelog.length ? changelog[0].created : 0,
     max: changelog.length ? changelog[changelog.length-1].created : 0,
   }
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRangeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setDate(parseInt(event.target.value)));
   }
 
   const handleFasterClick = () => {
     if (!project) return;
-    setSpeed(Math.min(speed+1, speeds.length-1))
+    dispatch(increaseSpeed());
   }
 
   const handlePlayClick = () => {
     if (!project) return;
-    setPlay(!play);
+    if (isPlaying) {
+      dispatch(pause())
+    } else {
+      dispatch(play());
+    }
   }
   
   const handleSlowerClick = () => {
     if (!project) return;
-    setSpeed(Math.max(0, speed-1))
+    dispatch(decreaseSpeed())
   }
 
   const handleStopClick = () => {
     if (!project) return;
-    setPlay(false);
+    dispatch(stop());
     dispatch(setDate(changelog.length ? changelog[0].created : 0));
   }
 
@@ -110,20 +88,17 @@ const DatePlayer = (props: Props) => {
   }, [fetchChangelog, project]);
 
   useEffect(() => {
-    if (!changelog.length) return;
-    dispatch(setDate(changelog[0].created));
+    dispatch(setDate(changelog.length ? changelog[0].created : 0));
   }, [changelog, dispatch]);
 
   useEffect(() => {
-    if (play) {
-      timeout = setInterval(() => {
-        dispatch(setDate(date + speeds[speed].interval));
-        clearInterval(timeout);
+    clearTimeout(timeout);
+    if (isPlaying) {
+      timeout = setTimeout(() => {
+        dispatch(setDate(date + playSpeeds[speed].interval));
       }, 1000);
-    } else {
-      clearInterval(timeout);
     }
-  }, [date, dispatch, play, speed]);
+  }, [date, dispatch, isPlaying, speed]);
 
   return (
     <fieldset disabled={!project}>
@@ -131,16 +106,16 @@ const DatePlayer = (props: Props) => {
         <Col xs="auto" className="pr-0">
           <ButtonToolbar className={props.className || ""} aria-label="Toolbar with play/pause buttons and range slider">
             <ButtonGroup size="sm" aria-label="Play control buttons">
-              <Button hidden variant="light" onClick={handleSlowerClick} aria-label="Slower" disabled={0 === speed}>
+              <Button variant="light" onClick={handleSlowerClick} aria-label="Slower" disabled={0 === speed}>
                 <FontAwesomeIcon icon={faBackward} />
               </Button>
               <Button variant="light" onClick={handlePlayClick} aria-label="Play">
-                <FontAwesomeIcon icon={play ? faPause : faPlay} />
+                <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
               </Button>
               <Button variant="light" onClick={handleStopClick} aria-label="Stop">
                 <FontAwesomeIcon icon={faStop} />
               </Button>
-              <Button hidden variant="light" onClick={handleFasterClick} aria-label="Faster" disabled={speeds.length-1 === speed}>
+              <Button variant="light" onClick={handleFasterClick} aria-label="Faster" disabled={playSpeeds.length-1 === speed}>
                 <FontAwesomeIcon icon={faForward} />
               </Button>
             </ButtonGroup>
@@ -151,8 +126,8 @@ const DatePlayer = (props: Props) => {
             custom
             max={range.max}
             min={range.min}
-            onChange={handleChange}
-            step={speeds[speed].interval}
+            onChange={handleRangeChange}
+            step={playSpeeds[speed].interval}
             type="range"
             value={date} />
         </Col>

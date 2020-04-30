@@ -1,9 +1,16 @@
 import { Dispatch, createSlice } from '@reduxjs/toolkit';
 import { addAlert } from './alerts';
 
-export interface Release {
+interface Change {
+  id: number,
+  created: number,
+}
+
+interface Issue {
   id: number,
   label: string,
+  created: number,
+  lastChange: Change,
 }
 
 export interface Project {
@@ -14,12 +21,24 @@ export interface Project {
   releases: Release[],
 };
 
+export interface Release {
+  id: number,
+  label: string,
+}
+
+export interface Sprint {
+  id: number | null,
+  label: string,
+  issues: Issue[],
+}
+
 interface State {
   date: number,
   includeUnestimated: boolean,
   project: Project | null,
   projects: Project[],
   releases: Release[],
+  sprints: Sprint[],
 }
 
 const initialState: State = {
@@ -28,12 +47,30 @@ const initialState: State = {
   project: null,
   projects: [],
   releases: [],
+  sprints: [
+    {
+      id: null,
+      label: "Backlog",
+      issues: []
+    }
+  ],
 };
 
 const configSlice = createSlice({
   name: "config",
   initialState,
   reducers: {
+    addSprint: (state: State, { payload }: { payload: Sprint }) => {
+      state.sprints.push(payload)
+    },
+    deleteSprint: (state: State, { payload }: { payload: number }) => {
+      const sprint = state.sprints.find(sprint => payload === sprint.id);
+      if (sprint?.issues?.length) {
+        const backlog = state.sprints.find(sprint => null === sprint.id);
+        sprint.issues.forEach(issue => backlog?.issues.push(issue));
+      }
+      state.sprints = state.sprints.filter(sprint => payload !== sprint.id);
+    },
     resetReleases: (state: State) => {
       state.releases = []
     },
@@ -55,7 +92,7 @@ const configSlice = createSlice({
   },
 });
 
-export const { resetReleases, setDate, setProject, setProjects, setReleases, toggleUnestimated } = configSlice.actions;
+export const { addSprint, deleteSprint, resetReleases, setDate, setProject, setProjects, setReleases, toggleUnestimated } = configSlice.actions;
 export const configSelector = (state: any) => state.config as State;
 export default configSlice.reducer;
 
