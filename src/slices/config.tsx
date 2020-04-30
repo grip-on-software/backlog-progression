@@ -1,9 +1,9 @@
 import { Dispatch, createSlice } from '@reduxjs/toolkit';
 import { addAlert } from './alerts';
 
-interface Release {
+export interface Release {
   id: number,
-  name: string,
+  label: string,
 }
 
 export interface Project {
@@ -15,6 +15,7 @@ export interface Project {
 };
 
 interface State {
+  date: number,
   includeUnestimated: boolean,
   project: Project | null,
   projects: Project[],
@@ -22,6 +23,7 @@ interface State {
 }
 
 const initialState: State = {
+  date: 0,
   includeUnestimated: false,
   project: null,
   projects: [],
@@ -34,6 +36,9 @@ const configSlice = createSlice({
   reducers: {
     resetReleases: (state: State) => {
       state.releases = []
+    },
+    setDate: (state: State, { payload }: { payload: number }) => {
+      state.date = payload
     },
     setProject: (state: State, { payload }: { payload: Project | null }) => {
       state.project = payload
@@ -50,7 +55,7 @@ const configSlice = createSlice({
   },
 });
 
-export const { resetReleases, setProject, setProjects, setReleases, toggleUnestimated } = configSlice.actions;
+export const { resetReleases, setDate, setProject, setProjects, setReleases, toggleUnestimated } = configSlice.actions;
 export const configSelector = (state: any) => state.config as State;
 export default configSlice.reducer;
 
