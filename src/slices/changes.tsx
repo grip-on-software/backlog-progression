@@ -56,8 +56,8 @@ const changesSlice = createSlice({
     setChangelog: (state: State, { payload }: { payload: Change[] }) => {
       state.changelog = payload
     },
-    undoChanges: (state: State, { payload }: { payload: { from: number } }) => {
-      console.log("Undo changes", payload.from);
+    undoChanges: (state: State, { payload }: { payload: { to: number } }) => {
+      console.log("Undo changes", payload.to);
     },
     updateSprint: (state: State, { payload }: { payload: Sprint }) => {
       const i = state.sprints.findIndex(s => payload.id === s.id);

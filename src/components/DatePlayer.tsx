@@ -117,9 +117,9 @@ const DatePlayer = (props: Props) => {
     }
 
     // Undo changes up to the given date.
-    const from = Math.max(0, changelog.findIndex(change => change.created > date));
-    lastChangeIndex = Math.max(0, from - 1);
-    dispatch(undoChanges({from}));
+    const to = Math.max(0, changelog.findIndex(change => change.created > date));
+    lastChangeIndex = Math.max(0, to - 1);
+    dispatch(undoChanges({to}));
 
   }, [changelog, date, dispatch])
 
