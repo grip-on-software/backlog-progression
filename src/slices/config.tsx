@@ -29,7 +29,7 @@ export interface Release {
 export interface Sprint {
   id: number | null,
   label: string,
-  issues: Issue[],
+  issues?: Issue[],
 }
 
 interface State {
@@ -67,7 +67,7 @@ const configSlice = createSlice({
       const sprint = state.sprints.find(sprint => payload === sprint.id);
       if (sprint?.issues?.length) {
         const backlog = state.sprints.find(sprint => null === sprint.id);
-        sprint.issues.forEach(issue => backlog?.issues.push(issue));
+        sprint.issues.forEach(issue => backlog?.issues?.push(issue));
       }
       state.sprints = state.sprints.filter(sprint => payload !== sprint.id);
     },
@@ -88,11 +88,15 @@ const configSlice = createSlice({
     },
     toggleUnestimated: (state: State) => {
       state.includeUnestimated = !state.includeUnestimated;
-    }
+    },
+    updateSprintLabel: (state: State, { payload }: { payload: Sprint }) => {
+      const i = state.sprints.findIndex(s => payload.id === s.id);
+      if (-1 !== i) state.sprints[i].label = payload.label;
+    },
   },
 });
 
-export const { addSprint, deleteSprint, resetReleases, setDate, setProject, setProjects, setReleases, toggleUnestimated } = configSlice.actions;
+export const { addSprint, deleteSprint, resetReleases, setDate, setProject, setProjects, setReleases, toggleUnestimated, updateSprintLabel } = configSlice.actions;
 export const configSelector = (state: any) => state.config as State;
 export default configSlice.reducer;
 
