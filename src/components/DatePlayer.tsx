@@ -1,20 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { Col, ButtonToolbar, ButtonGroup, Button, Form, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBackward, faForward, faPlay, faPause, faStop } from '@fortawesome/free-solid-svg-icons';
 
-import { addAlert } from '../slices/alerts';
-import { Release, Sprint, configSelector, setDate, addSprint, updateSprintLabel } from '../slices/config';
+import { changesSelector, fetchChangelog, applyChanges, undoChanges } from '../slices/changes';
+import { configSelector, setDate } from '../slices/config';
 import { decreaseSpeed, increaseSpeed, pause, play, playerSelector, playSpeeds, stop } from '../slices/player';
-
-interface Change {
-  created: number,
-  id: number,
-  issueId: number,
-  field: "release" | "sprint" | "storyPoints",
-  value: Release | Sprint | number | null,
-}
 
 interface Props {
   className?: string,
@@ -34,26 +26,16 @@ const tomorrow = (ms: number) => {
 
 const DatePlayer = (props: Props) => {
   const dispatch = useDispatch();
-  const { date, project, sprints } = useSelector(configSelector);
+  const { changelog } = useSelector(changesSelector);
+  const { date, project } = useSelector(configSelector);
   const { isPlaying, speed } = useSelector(playerSelector);
 
-  const [changelog, setChangelog] = useState<Change[]>([]);
   const range = {
     min: changelog.length ? today(changelog[0].created).getTime() : 0,
     max: changelog.length ? tomorrow(changelog[changelog.length-1].created).getTime() : 0,
   }
 
-  const applyChanges = useCallback((changes: Change[]) => {
-    for (let i = 0; i < changes.length; ++i) {
-      console.log(`Issue ${changes[i].issueId}: apply '${changes[i].field}' => ${changes[i].value}`);
-    }
-  }, []);
-
-  const undoChanges = useCallback((changes: Change[]) => {
-    for (let i = changes.length - 1; i >= 0; --i) {
-      console.log(`Issue ${changes[i].issueId}: undo '${changes[i].field}' => ${changes[i].value}`);
-    }
-  }, []);
+  // Callbacks.
 
   const handleRangeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setDate(parseInt(event.target.value)));
@@ -84,24 +66,12 @@ const DatePlayer = (props: Props) => {
     dispatch(setDate(changelog.length ? changelog[0].created : 0));
   }
 
-  const fetchChangelog = useCallback((projectKey: string) => {
-    fetch("data/IES/changelog.json")
-      .then((response: Response) => response.json())
-      .then((data: Change[]) => setChangelog(data))
-      .catch((error: Error) => {
-        console.error(error);
-        dispatch(addAlert({
-          dismissible: false,
-          message: "Something went wrong while fetching project history. Please reload the page.",
-          variant: "danger"
-        }));
-      });
-  }, [dispatch]);
+  // Effects.
 
   useEffect(() => {
     if (!project) return;
-    fetchChangelog(project.key);
-  }, [fetchChangelog, project]);
+    dispatch(fetchChangelog(project.key));
+  }, [dispatch, project]);
 
   useEffect(() => {
     dispatch(setDate(changelog.length ? changelog[0].created : 0));
@@ -129,7 +99,7 @@ const DatePlayer = (props: Props) => {
         )
       ];
       lastChangeIndex = to;
-      applyChanges(changelog.slice(from, to));
+      dispatch(applyChanges({from, to}));
       return;
     }
 
@@ -142,21 +112,16 @@ const DatePlayer = (props: Props) => {
           : Math.max(0, changelog.length - 1)
       ];
       lastChangeIndex = to;
-      applyChanges(changelog.slice(from, to));
+      dispatch(applyChanges({from, to}));
       return;
     }
 
     // Undo changes up to the given date.
-    const [from, to] = [
-      Math.max(
-        0,
-        changelog.findIndex(change => change.created > date)
-      ),
-      lastChangeIndex];
+    const from = Math.max(0, changelog.findIndex(change => change.created > date));
     lastChangeIndex = Math.max(0, from - 1);
-    undoChanges(changelog.slice(from, to));
+    dispatch(undoChanges({from}));
 
-  }, [applyChanges, changelog, date, dispatch, undoChanges])
+  }, [changelog, date, dispatch])
 
   return (
     <fieldset disabled={!project}>
