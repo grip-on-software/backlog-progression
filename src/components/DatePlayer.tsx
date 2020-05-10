@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBackward, faForward, faPlay, faPause, faStop } from '@fortawesome/free-solid-svg-icons';
 
-import { changesSelector, fetchChangelog, applyChanges, undoChanges } from '../slices/changes';
+// import { changesSelector, applyChanges, undoChanges } from '../slices/changes';
 import { configSelector, setDate } from '../slices/config';
 import { decreaseSpeed, increaseSpeed, pause, play, playerSelector, playSpeeds, stop } from '../slices/player';
 
@@ -12,7 +12,6 @@ interface Props {
   className?: string,
 };
 
-let lastChangeIndex = -1;
 let timeout: NodeJS.Timeout;
 
 const today = (ms: number) => {
@@ -26,14 +25,8 @@ const tomorrow = (ms: number) => {
 
 const DatePlayer = (props: Props) => {
   const dispatch = useDispatch();
-  const { changelog } = useSelector(changesSelector);
   const { date, project } = useSelector(configSelector);
-  const { isPlaying, speed } = useSelector(playerSelector);
-
-  const range = {
-    min: changelog.length ? today(changelog[0].created).getTime() : 0,
-    max: changelog.length ? tomorrow(changelog[changelog.length-1].created).getTime() : 0,
-  }
+  const { isPlaying, range, speed } = useSelector(playerSelector);
 
   // Callbacks.
 
@@ -63,19 +56,14 @@ const DatePlayer = (props: Props) => {
   const handleStopClick = () => {
     if (!project) return;
     dispatch(stop());
-    dispatch(setDate(changelog.length ? changelog[0].created : 0));
+    dispatch(setDate(range[0]));
   }
 
   // Effects.
 
   useEffect(() => {
-    if (!project) return;
-    dispatch(fetchChangelog(project.key));
-  }, [dispatch, project]);
-
-  useEffect(() => {
-    dispatch(setDate(changelog.length ? changelog[0].created : 0));
-  }, [changelog, dispatch]);
+    dispatch(setDate(range[0]));
+  }, [dispatch, range]);
 
   useEffect(() => {
     clearTimeout(timeout);
@@ -86,42 +74,42 @@ const DatePlayer = (props: Props) => {
     }
   }, [date, dispatch, isPlaying, speed]);
 
-  useEffect(() => {
-    if (!changelog.length || !date) return;
+  // useEffect(() => {
+  //   if (!changelog.length || !date) return;
     
-    // No changes have been applied yet.
-    if (-1 === lastChangeIndex) {
-      const [from, to] = [
-        0,
-        Math.max(
-          0,
-          changelog.findIndex(change => change.created > date) - 1
-        )
-      ];
-      lastChangeIndex = to;
-      dispatch(applyChanges({from, to}));
-      return;
-    }
+  //   // No changes have been applied yet.
+  //   if (-1 === lastChangeIndex) {
+  //     const [from, to] = [
+  //       0,
+  //       Math.max(
+  //         0,
+  //         changelog.findIndex(change => change.created > date) - 1
+  //       )
+  //     ];
+  //     lastChangeIndex = to;
+  //     dispatch(applyChanges({from, to}));
+  //     return;
+  //   }
 
-    // Apply new changes up to the given date.
-    if (changelog[lastChangeIndex].created < date) {
-      const [from, to] = [
-        Math.min(lastChangeIndex + 1, changelog.length - 1),
-        changelog.some(change => change.created > date)
-          ? changelog.findIndex(change => change.created > date) - 1
-          : Math.max(0, changelog.length - 1)
-      ];
-      lastChangeIndex = to;
-      dispatch(applyChanges({from, to}));
-      return;
-    }
+  //   // Apply new changes up to the given date.
+  //   if (changelog[lastChangeIndex].created < date) {
+  //     const [from, to] = [
+  //       Math.min(lastChangeIndex + 1, changelog.length - 1),
+  //       changelog.some(change => change.created > date)
+  //         ? changelog.findIndex(change => change.created > date) - 1
+  //         : Math.max(0, changelog.length - 1)
+  //     ];
+  //     lastChangeIndex = to;
+  //     dispatch(applyChanges({from, to}));
+  //     return;
+  //   }
 
-    // Undo changes up to the given date.
-    const to = Math.max(0, changelog.findIndex(change => change.created > date));
-    lastChangeIndex = Math.max(0, to - 1);
-    dispatch(undoChanges({to}));
+  //   // Undo changes up to the given date.
+  //   const to = Math.max(0, changelog.findIndex(change => change.created > date));
+  //   lastChangeIndex = Math.max(0, to - 1);
+  //   dispatch(undoChanges({to}));
 
-  }, [changelog, date, dispatch])
+  // }, [changelog, date, dispatch])
 
   return (
     <fieldset disabled={!project}>
@@ -147,8 +135,8 @@ const DatePlayer = (props: Props) => {
         <Col>
           <Form.Control
             custom
-            max={range.max}
-            min={range.min}
+            max={tomorrow(range[1]).getTime()}
+            min={today(range[0]).getTime()}
             onChange={handleRangeChange}
             step={playSpeeds[speed].interval}
             type="range"

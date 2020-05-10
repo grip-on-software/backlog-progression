@@ -2,11 +2,13 @@ import { createSlice } from '@reduxjs/toolkit';
 
 interface State {
   isPlaying: boolean,
+  range: [number, number],
   speed: number,
 }
 
 const initialState: State = {
   isPlaying: false,
+  range: [0, 0],
   speed: 1,
 };
 
@@ -35,12 +37,15 @@ const playerSlice = createSlice({
     play: (state: State) => {
       state.isPlaying = true
     },
+    setRange: (state: State, { payload }: { payload: [number, number] }) => {
+      state.range = payload
+    },
     stop: (state: State) => {
       state.isPlaying = false
     },
   },
 });
 
-export const { decreaseSpeed, increaseSpeed, pause, play, stop } = playerSlice.actions;
+export const { decreaseSpeed, increaseSpeed, pause, play, setRange, stop } = playerSlice.actions;
 export const playerSelector = (state: any) => state.player as State;
 export default playerSlice.reducer;

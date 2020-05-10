@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import DatePlayer from './DatePlayer';
 import ProjectTypeahead from './ProjectTypeahead';
 import { alertsSelector, deleteAlert } from '../slices/alerts';
+import CirclePackChart from './CirclePackChart';
 
 const App = () => {
   
@@ -38,6 +39,7 @@ const App = () => {
           <Card className="mb-4">
             <Card.Body>
               <ProjectTypeahead />
+              <CirclePackChart height={512} />
               <DatePlayer />
             </Card.Body>
           </Card>

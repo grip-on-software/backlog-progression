@@ -2,80 +2,131 @@ import { Dispatch, createSlice } from '@reduxjs/toolkit';
 import { addAlert } from './alerts';
 
 interface Change {
-  id: number,
   created: number,
+  id: number,
+  issueId: number,
+  field: "release" | "sprint" | "storyPoints",
+  value: any,
 }
 
 interface Issue {
   id: number,
-  label: string,
+  key: string,
   created: number,
-  lastChange: Change,
+  sprintId?: number | null,
+  storyPoints?: number | null,
+  category?: "estimated" | "reestimatedHigher" | "reestimatedLower" | "unestimated",
 }
 
 export interface Sprint {
   id: number | null,
   label: string,
-  issues?: Issue[],
+}
+
+interface SprintState {
+  id: number,
+  created: number,
+  name: string,
+  children: any[]
 }
 
 interface State {
-  changelog: Change[],
-  sprints: Sprint[],
+  sprintStates: SprintState[],
 }
 
 const initialState: State = {
-  changelog: [],
-  sprints: [
-    {
-      id: null,
-      label: "Backlog",
-      issues: []
-    }
-  ],
+  sprintStates: [],
 };
 
 const changesSlice = createSlice({
   name: "changes",
   initialState,
   reducers: {
-    addSprint: (state: State, { payload }: { payload: Sprint }) => {
-      state.sprints.push(payload)
+    // applyChanges: (state: State, { payload }: { payload: { from: number, to: number } }) => {
+    //   for (let i = payload.from; i <= payload.to; ++i) {
+    //     const change = state.changelog[i];
+    //     const issue = state.issues.find(issue => change.issueId === issue.id);
+    //     if (!issue) continue;
+        
+    //     if ("sprint" === change.field) {
+    //       const value = change.value as Sprint;
+    //       let sprint = state.sprints.find(sprint => value.id === sprint.id);
+    //       if (!sprint) {
+    //         state.sprints.push(value);
+    //       } else {
+    //         sprint.label = value.label;
+    //       }
+    //       issue.sprintId = value.id;
+    //     } else if ("storyPoints" === change.field) {
+    //       const value = parseFloat(change.value);
+    //       if (issue.storyPoints) {
+    //         if (issue.storyPoints < value) {
+    //           issue.category = "reestimatedHigher";
+    //         } else if (issue.storyPoints > value) {
+    //           issue.category = "reestimatedLower";
+    //         } else {
+    //           issue.category = "estimated";
+    //         }
+    //       } else {
+    //         if (value) {
+    //           issue.category = "reestimatedHigher";
+    //         } else {
+    //           issue.category = "unestimated";
+    //         }
+    //       }
+    //       issue.storyPoints = value;
+    //     }
+    //   }
+    // },
+    // // deleteSprint: (state: State, { payload }: { payload: number }) => {
+    // //   state.sprints = state.sprints.filter(sprint => payload !== sprint.id);
+    // //   state.issues.forEach(issue => {
+    // //     if (payload === issue.sprintId) {
+    // //       issue.sprintId = null;
+    // //     }
+    // //   });
+    // // },
+    setSprintStates: (state: State, { payload }: { payload: SprintState[] }) => {
+      state.sprintStates = payload
     },
-    applyChanges: (state: State, { payload }: { payload: { from: number, to: number } }) => {
-      console.log("Apply change", payload.from, payload.to);
-    },
-    deleteSprint: (state: State, { payload }: { payload: number }) => {
-      const sprint = state.sprints.find(sprint => payload === sprint.id);
-      if (sprint?.issues?.length) {
-        const backlog = state.sprints.find(sprint => null === sprint.id);
-        sprint.issues.forEach(issue => backlog?.issues?.push(issue));
-      }
-      state.sprints = state.sprints.filter(sprint => payload !== sprint.id);
-    },
-    setChangelog: (state: State, { payload }: { payload: Change[] }) => {
-      state.changelog = payload
-    },
-    undoChanges: (state: State, { payload }: { payload: { to: number } }) => {
-      console.log("Undo changes", payload.to);
-    },
-    updateSprint: (state: State, { payload }: { payload: Sprint }) => {
-      const i = state.sprints.findIndex(s => payload.id === s.id);
-      if (-1 !== i) state.sprints[i].label = payload.label;
-    },
+    // setIssues: (state: State, { payload }: { payload: Issue[] }) => {
+    //   state.issues = payload
+    // },
+    // // setSprints: (state: State, { payload }: { payload: Sprint }) => {
+    // //   state.sprints = payload
+    // // },
+    // undoChanges: (state: State, { payload }: { payload: { to: number } }) => {
+    //   console.log("Undo changes", payload.to);
+    // },
+    // // updateIssue: (state: State, { payload }: { payload: Sprint }) => {
+    // //   const i = state.sprints.findIndex(s => payload.id === s.id);
+    // //   if (-1 === i) {
+    // //     state.sprints.push(payload);
+    // //   } else {
+    // //     state.sprints[i].label = payload.label;
+    // //   }
+    // // },
+    // // updateSprint: (state: State, { payload }: { payload: Sprint }) => {
+    // //   const i = state.sprints.findIndex(s => payload.id === s.id);
+    // //   if (-1 === i) {
+    // //     state.sprints.push(payload);
+    // //   } else {
+    // //     state.sprints[i].label = payload.label;
+    // //   }
+    // // },
   },
 });
 
-export const { addSprint, applyChanges, deleteSprint, setChangelog, undoChanges, updateSprint } = changesSlice.actions;
+export const { setSprintStates } = changesSlice.actions;
 export const changesSelector = (state: any) => state.changes as State;
 export default changesSlice.reducer;
 
-export const fetchChangelog = (projectKey: string) => {
+export const fetchSprintStates = (projectKey: string) => {
   return async (dispatch: Dispatch) => {
     try {
-      const response = await fetch("data/IES/changelog.json");
-      const data: Change[] = await response.json();
-      dispatch(setChangelog(data));
+      const response = await fetch("data/IES/sprintStates.json");
+      const data: SprintState[] = await response.json();
+      dispatch(setSprintStates(data));
     } catch (error) {
       console.error(error);
       dispatch(addAlert({

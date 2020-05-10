@@ -1,2 +1,12 @@
 // Import Bootstrap and its default variables
 @import '~bootstrap/scss/bootstrap.scss';
+
+svg {
+  background: $gray-200;
+}
+
+circle {
+  fill: indianred;
+  opacity: 0.3;
+  stroke: white;
+}
