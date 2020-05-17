@@ -1,12 +1,54 @@
 // Import Bootstrap and its default variables
 @import '~bootstrap/scss/bootstrap.scss';
 
+$done: #bdfdb0;
+$indeterminate: #ffffe0;
+$new: #85cec8;
+
 svg {
   background: $gray-200;
 }
 
 circle {
-  fill: indianred;
-  opacity: 0.3;
+  fill: $gray-400;
   stroke: white;
+}
+
+circle:hover {
+  stroke: black;
+  cursor: pointer;
+}
+
+circle.active {
+  fill: #62a5d5;
+  opacity: 0.5;
+}
+
+circle.status-category {
+  opacity: 0.75;
+}
+
+circle.done {
+  fill: $done;
+}
+
+circle.indeterminate {
+  fill: $indeterminate;
+}
+
+circle.new {
+  fill: $new;
+}
+
+circle.undefined {
+  fill: $gray-300;
+}
+
+circle.issue {
+  fill: black;
+  opacity: 0.15;
+}
+
+circle.issue:hover {
+  stroke-width: 2;
 }
