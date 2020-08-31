@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Col, ButtonToolbar, ButtonGroup, Button, Form, Row } from 'react-bootstrap';
+import { Col, ButtonToolbar, ButtonGroup, Button, Row } from 'react-bootstrap';
+import RangeSlider from 'react-bootstrap-range-slider';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBackward, faForward, faPlay, faPause, faStop } from '@fortawesome/free-solid-svg-icons';
@@ -113,7 +114,7 @@ const DatePlayer = (props: Props) => {
 
   return (
     <fieldset disabled={!project}>
-      <Row className="align-items-end">
+      <Row className="align-items-center">
         <Col xs="auto" className="pr-0">
           <ButtonToolbar className={props.className || ""} aria-label="Toolbar with play/pause buttons and range slider">
             <ButtonGroup size="sm" aria-label="Play control buttons">
@@ -133,14 +134,14 @@ const DatePlayer = (props: Props) => {
           </ButtonToolbar>
         </Col>
         <Col>
-          <Form.Control
-            custom
-            max={tomorrow(range[1]).getTime()}
-            min={today(range[0]).getTime()}
-            onChange={handleRangeChange}
-            step={playSpeeds[speed].interval}
-            type="range"
-            value={date} />
+            <RangeSlider
+              max={tomorrow(range[1]).getTime()}
+              min={today(range[0]).getTime()}
+              onChange={handleRangeChange}
+              step={playSpeeds[speed].interval}
+              tooltip={date > 0 ? "on" : "off"}
+              tooltipLabel={(value: number) => <span className="text-nowrap">{new Date(value).toLocaleDateString('nl-NL')}, {playSpeeds[speed].label}/s</span>}
+              value={date} />
         </Col>
       </Row>
     </fieldset>

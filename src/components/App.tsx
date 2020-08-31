@@ -39,7 +39,7 @@ const App = () => {
           <Card className="mb-4">
             <Card.Body>
               <ProjectTypeahead />
-              <CirclePackChart />
+              <CirclePackChart height={512} />
               <DatePlayer />
             </Card.Body>
           </Card>

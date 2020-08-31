@@ -5,50 +5,91 @@ $done: #bdfdb0;
 $indeterminate: #ffffe0;
 $new: #85cec8;
 
-svg {
-  background: $gray-200;
-}
-
 circle {
+  fill: $light;
+  stroke: $gray-400;
+}
+
+circle.sprint {
   fill: $gray-400;
-  stroke: white;
 }
 
-circle:hover {
-  stroke: black;
-  cursor: pointer;
+circle.sprint.active {
+  fill: $primary;
 }
 
-circle.active {
-  fill: #62a5d5;
-  opacity: 0.5;
+circle.status-category.done {
+  fill: $success;
 }
 
-circle.status-category {
-  opacity: 0.75;
+circle.status-category.new {
+  fill: $info;
 }
 
-circle.done {
-  fill: $done;
+circle.status-category.indeterminate {
+  fill: $warning;
 }
 
-circle.indeterminate {
-  fill: $indeterminate;
-}
-
-circle.new {
-  fill: $new;
-}
-
-circle.undefined {
-  fill: $gray-300;
+circle.status-category.undefined {
+  fill: $dark;
 }
 
 circle.issue {
-  fill: black;
-  opacity: 0.15;
+  fill: white;
+  opacity: 0.75;
 }
 
-circle.issue:hover {
+circle.issue.unestimated {
+  opacity: 0.2;
+  stroke: white;
+  stroke-dasharray: 2;
   stroke-width: 2;
 }
+
+// svg {
+//   background: $gray-200;
+// }
+
+// circle {
+//   fill: $gray-400;
+//   stroke: white;
+// }
+
+// circle:hover {
+//   stroke: black;
+//   cursor: pointer;
+// }
+
+// circle.active {
+//   fill: #62a5d5;
+//   opacity: 0.5;
+// }
+
+// circle.status-category {
+//   opacity: 0.75;
+// }
+
+// circle.done {
+//   fill: $done;
+// }
+
+// circle.indeterminate {
+//   fill: $indeterminate;
+// }
+
+// circle.new {
+//   fill: $new;
+// }
+
+// circle.undefined {
+//   fill: $gray-300;
+// }
+
+// circle.issue {
+//   fill: black;
+//   opacity: 0.15;
+// }
+
+// circle.issue:hover {
+//   stroke-width: 2;
+// }

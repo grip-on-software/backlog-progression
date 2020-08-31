@@ -1,10 +1,16 @@
-import { hierarchy, pack, select } from "d3";
+import { hierarchy, mouse, pack, select } from "d3";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Card, Figure, Table } from "react-bootstrap";
+import { Card, Figure } from "react-bootstrap";
 import { useDispatch, useSelector } from 'react-redux';
 
 import { configSelector } from "../slices/config";
 import { setRange } from "../slices/player";
+
+interface Issue {
+  id: number,
+  key: string,
+  created: number,
+}
 
 interface Sprint {
   id: number,
@@ -30,6 +36,7 @@ interface StatusCategory {
 
 interface Props {
   className?: string,
+  height: number,
   margin?: {
     bottom?: number,
     left?: number,
@@ -46,6 +53,7 @@ const CirclePackChart = (props: Props) => {
   const container = useRef<(HTMLElement & Figure<"figure">) | null>(null);
   const svg = useRef<SVGSVGElement | null>(null);
 
+  const [issues, setIssues] = useState<Issue[]>([]);
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [sprintState, setSprintState] = useState<number>(-1);
   const [sprintStates, setSprintStates] = useState<SprintState[]>([]);
@@ -56,12 +64,12 @@ const CirclePackChart = (props: Props) => {
 
   const sprintPack = useCallback(data => {
     return pack()
-        .size([width, width])
+        .size([width, props.height])
         .padding(3)
       (hierarchy(data)
         .sum(d => d.value)
         .sort((a,b) => b.value! - a.value!))
-  }, [width]);
+  }, [props.height, width]);
   
   const handleResize = useCallback(() => {
     if (container.current!.offsetWidth !== width) {
@@ -77,6 +85,13 @@ const CirclePackChart = (props: Props) => {
   // Define scales, axes, and draw chart.
   const dispatch = useDispatch();
 
+  const fetchIssues = (projectKey: string) => {
+    fetch("data/IES/issues.json")
+      .then(response => response.json())
+      .then((data: Issue[]) => setIssues(data))
+      .catch(error => console.warn(error))
+  }
+
   const fetchSprints = (projectKey: string) => {
     fetch("data/IES/sprints.json")
       .then(response => response.json())
@@ -85,7 +100,7 @@ const CirclePackChart = (props: Props) => {
   }
 
   const fetchSprintStates = (projectKey: string) => {
-    fetch("data/IES/sprintStates.json")
+    fetch("data/IES/states.json")
       .then(response => response.json())
       .then((data: SprintState[]) => setSprintStates(data))
       .catch(error => console.warn(error))
@@ -104,6 +119,7 @@ const CirclePackChart = (props: Props) => {
 
   useEffect(() => {
     if (!project) return;
+    fetchIssues(project.key);
     fetchSprints(project.key);
     fetchSprintStates(project.key);
   }, [project]);
@@ -122,23 +138,52 @@ const CirclePackChart = (props: Props) => {
 
   useEffect(() => {
     if (-1 === sprintState) return;
-
     if (!svg.current) return;
     const chart = select(svg.current);
-    console.log("State:", sprintStates[sprintState]);
+    // console.log("State:", sprintStates[sprintState]);
     const root = sprintPack(sprintStates[sprintState]);
-    console.log(root.descendants())
+
     chart.select(".root")
       .selectAll("circle")
-      .data(root.descendants(), (d: any) => d.data.key)
-      .join("circle")
-        .transition()
-        .duration(500)
+      .data(root.descendants(), (d: any) => {
+        switch (d.depth) {
+          case 0:
+            return "state";
+          case 1:
+              return `sprint-${d.data.id}`;
+          case 2:
+            return `statusCategory-${d.parent.data.id}-${d.data.id}`;
+          case 3:
+            return `issue-${d.parent.parent.data.id}-${d.data.id}`;
+        }
+        return d.data.id;
+      })
+      .join(
+        enter => enter.append("circle")
+          .attr("transform", d => root.r
+            ? `translate(${(d.x - root.x)*(width/(root.r*2))+width/2},${(d.y - root.y)*(width/(root.r*2))+width/2})`
+            : `translate(${width},${width})`)
+          .call(enter => enter
+            .transition().duration(750)
+            .attr("r", d => root.r ? d.r * (width/(root.r*2)) : 0)),
+        update => update
+          .call(update => update
+            .transition().duration(750)
+            .attr("transform", d => root.r
+              ? `translate(${(d.x - root.x)*(width/(root.r*2))+width/2},${(d.y - root.y)*(width/(root.r*2))+width/2})`
+              : `translate(${width},${width})`)
+            .attr("r", d => root.r ? d.r * (width/(root.r*2)) : 0)),
+        exit => exit
+          .call(exit => exit
+            .transition().duration(750)
+            .attr("r", 0)
+          .remove()),
+      )
         .attr("class", (d: any) => {
           let className = "";
           switch (d.depth) {
             case 0:
-              className += "sprints";
+              className += "state";
               break;
             case 1:
               className += "sprint";
@@ -156,34 +201,46 @@ const CirclePackChart = (props: Props) => {
               break;
             case 3:
               className += "issue";
+              if (d.data.unestimated) {
+                className += " unestimated";
+              }
               break;
           }
           return className;
         })
-        .attr("transform", d => root.r
-          ? `translate(${(d.x - root.x)*(width/(root.r*2))+width/2},${(d.y - root.y)*(width/(root.r*2))+width/2})`
-          : `translate(${width},${width})`)
-        .attr("r", d => root.r ? d.r * (width/(root.r*2)) : 0);
+        .attr("data-id", (d: any) => d.data.id);
 
       chart.selectAll("circle")
         .on("mouseover", (d: any) => {
-          console.log(d);
           const foreignObject = chart.select(".info-panel")
             .attr("class", "info-panel")
-            .attr("x", d.x - Math.min(width, 256)/2)
-            .attr("y", d.y + d.r + 10);
+            .attr("x", mouse(svg.current!)[0]+25)
+            .attr("y", mouse(svg.current!)[1]-25);
           const panel = foreignObject.select(".card");
           const header = panel.select(".card-header")
           const title = panel.select(".card-title");
+          const subtitle = panel.select(".card-subtitle");
+          const text = panel.select(".card-text");
           switch (d.depth) {
             case 0:
               header.text("Sprint container");
               title.text("Sprints");
+              subtitle.text("");
+              text.text("");
               break;
             case 1:
               let sprint = sprints.find(s => d.data.id === s.id);
               header.text("Sprint");
               title.text(sprint ? sprint.label : "Backlog");
+              subtitle.text(sprint 
+                ? sprint.start 
+                  ? sprint.end
+                    ? `${new Date(sprint.start).toLocaleString("nl-NL")} - ${new Date(sprint.end).toLocaleString("nl-NL")}`
+                    : new Date(sprint.start).toLocaleString("nl-NL")
+                  : "Unknown start date"
+                : "Unknown start date"
+              );
+              text.text(`${d.value} story points total`);
               break;
             case 2:
               let statusCategory = statusCategories.find(s => d.data.id === s.id);
@@ -203,28 +260,40 @@ const CirclePackChart = (props: Props) => {
                   break;
               }
               title.text(statusCategory ? statusCategory.name : "Unknown");
+              subtitle.text("");
+              text.text(`${d.value} story points total`);
               break;
             case 3:
+              const issue = issues.find(issue => d.data.id === issue.id);
               header.text("Issue");
-              title.text(d.data.key);
+              title.text(issue?.key || "Unknown issue");
+              subtitle.text(issue?.created ? new Date(issue?.created).toLocaleString("nl-NL") : "Unknown creation date");
+              text.text(`${d.data.value} story points`);
               break;
           }
+        })
+        .on("mousemove", () => {
+          chart.select(".info-panel")
+            .attr("x", mouse(svg.current!)[0]+25)
+            .attr("y", mouse(svg.current!)[1]-25);
         })
         .on("mouseout", () => {
           chart.select(".info-panel")
             .attr("class", "info-panel d-none")
         });
-  }, [date, sprintPack, sprints, sprintState, sprintStates, statusCategories, width])
+  }, [date, issues, props.height, sprintPack, sprints, sprintState, sprintStates, statusCategories, width])
 
   return (
     <Figure ref={container} className={`${props.className} figure-img d-block`}>
       <svg className="chart chart-circlepack" ref={svg} height={width} width={width} viewBox={`0 0 ${width} ${width}`}>
         <g className="root"></g>
-        <foreignObject className="info-panel d-none" height={Math.min(256, width)} width={Math.min(256, width)}>
+        <foreignObject className="info-panel d-none" height={256} width={256}>
           <Card>
             <Card.Header></Card.Header>
             <Card.Body>
               <Card.Title></Card.Title>
+              <Card.Subtitle className="text-muted mb-2"></Card.Subtitle>
+              <Card.Text></Card.Text>
             </Card.Body>
           </Card>
         </foreignObject>
