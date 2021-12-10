@@ -1,4 +1,10 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app), uses [TypeScript](https://www.typescriptlang.org) and relies on [Redux Toolkit](https://redux-toolkit.js.org/). The latter is an opinionated toolset for building Redux apps quickly and efficiently.
+
+## Developer notes
+
+This project does not connect with the JIRA API, but instead relies on local copies of JSON responses from the JIRA API. The JSON copies are preprocessed by a quick-and-ditry Python script that is available in the `preprocess` folder. This is because the chart is generated based on all the changes to all the issues from a JIRA project, which causes severe performance degradation if fetched and applied to the chart in real-time. The output from the scripts can be copied to the `public/data/${PROJECTKEY}` folder in this repository.
+
+It should be evident that this method is not suitable for long-term use, and a better method of extracting the JIRA data should be found.
 
 ## Available Scripts
 
