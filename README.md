@@ -1,4 +1,10 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app), uses [TypeScript](https://www.typescriptlang.org) and relies on [Redux Toolkit](https://redux-toolkit.js.org/). The latter is an opinionated toolset for building Redux apps quickly and efficiently.
+# Product backlog progression chart
+
+This project was bootstrapped with [Create React 
+App](https://github.com/facebook/create-react-app), uses 
+[TypeScript](https://www.typescriptlang.org) and relies on [Redux 
+Toolkit](https://redux-toolkit.js.org/). The latter is an opinionated toolset 
+for building Redux apps quickly and efficiently.
 
 ## Developer notes
 
